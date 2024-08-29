@@ -55,6 +55,8 @@ const authenticationV2 = asyncHandle( async (req, res, next) => {
     if(!keyStore) throw new NotFoundError('Invalid Request')
     //get rfreshToken from client
     const refreshToken = req.headers[HEADER.REFRESH_TOKEN]
+
+
     if(refreshToken) {
         const decodeUser = jwt.verify(refreshToken, keyStore.privateKey)
         if(userId != decodeUser.userId) throw new AuthenticateError('Invalid UserID')
@@ -63,6 +65,7 @@ const authenticationV2 = asyncHandle( async (req, res, next) => {
         req.refreshToken = refreshToken
         return next()
     }
+    
     //get accessToken from client
     const accessToken = req.headers[HEADER.AUTHORIZATION]
     if(!accessToken) throw new AuthenticateError('Invalid Request')

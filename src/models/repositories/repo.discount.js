@@ -7,26 +7,26 @@ const {
 } = require('../../utils')
 
 //query
-const findOneDiscount = async({filter}) => {
+const findOneDiscount = async(filter) => {
     return await discountModel
     .findOne(filter)
 }
 
-const findOneDiscountUnselect = async({filter}, unselectData = []) => {
+const findOneDiscountUnselect = async(filter, unselectData = []) => {
     return await discountModel
     .findOne(filter)
     .select(readUnselectArray(unselectData))
     .lean()
 }
 
-const findOneDiscountSelect = async({filter}, selectData = []) => {
+const findOneDiscountSelect = async(filter, selectData = []) => {
     return await discountModel
     .findOne(filter)
     .select(readSelectArray(selectData))
     .lean()
 }
 
-const findAllDiscountSelect = async({filter}, selectData, limit, page, sort) => {
+const findAllDiscountSelect = async(filter, selectData, limit, page, sort) => {
     const skip = (page - 1) * limit
     return await discountModel
     .find(filter)
@@ -37,7 +37,7 @@ const findAllDiscountSelect = async({filter}, selectData, limit, page, sort) => 
     .lean()
 }
 
-const findAllDiscountUnselect = async({filter}, unSelectData, limit, page, sort) => {
+const findAllDiscountUnselect = async(filter, unSelectData, limit, page, sort) => {
     const skip = (page - 1) * limit
     return await discountModel
     .find(filter)

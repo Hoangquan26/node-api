@@ -8,7 +8,7 @@ const {Types} = require('mongoose')
 
 //mongoose
 
-const convertObjectIdMongoDB = id => Types.ObjectId(id)
+const convertObjectIdMongoDB = id => new Types.ObjectId(id)
 //select metadata function
 const getInstancesData = ({object = {} , fields = []}) => {
     return _.pick( object, fields )
@@ -47,15 +47,15 @@ const clearUpdateNestedValue = (object) => {
                 })
             }
             else {
-                final[key] = val
+                if(Array.isArray(val))
+                    final[key] = val.filter(item => ![null, undefined].includes(item))
+                else
+                    final[key] = val
             }
         } 
     })
     return final
 }
-
-
-
 
 module.exports = {
     getInstancesData,

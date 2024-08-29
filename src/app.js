@@ -24,16 +24,13 @@ app.use(helmet())
 app.use(compression())
 app.use(express.json())
 // **init db
-
 const instanceMongoDb = require('./dbs/init.mongodb')
 
 // **init routers
-
-
 app.use('', require('./routers/index'))
+
+
 // **handling error
-
-
 app.use((req, res, next) => {
     const statusCode = 404
     const error = new Error('Not Found')

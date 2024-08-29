@@ -7,56 +7,60 @@ class DiscountController {
     static insertDiscount = async(req, res, next) => {
         new CREATED({
             message: "Insert discount successful",
-            metadata: DiscountService.insertDiscount(req.body)
-        }).send()
+            metadata: await DiscountService.insertDiscount({
+                ...req.body,
+                discount_shopId: req.user.userId
+            })
+        }).send(res)
     }
     static updateDiscount = async(req, res, next) => {
         new OK({
             message: "Update discount successful",
-            metadata: DiscountService.updateDiscount({
-                ...req.body
+            metadata: await DiscountService.updateDiscount({
+                ...req.body,
+                discount_shopId: req.user.userId
             })
-        }).send()
+        }).send(res)
     }
     static findAllProductAvailable = async(req, res, next) => {
         new OK({
             message: "Find all products avaliable successful",
-            metadata: DiscountService.findAllProductAvailable({
+            metadata: await DiscountService.findAllProductAvailable({
                 ...req.body
             })
-        }).send()
+        }).send(res)
     }
     static getAllDiscountCodesByShop = async(req, res, next) => {
         new OK({
             message: "Get all discount code successful",
-            metadata: DiscountService.getAllDiscountCodesByShop({
+            metadata: await DiscountService.getAllDiscountCodesByShop({
                 ...req.body
             })
-        }).send()
+        }).send(res)
     }
     static getDiscountAmount = async(req, res, next) => {
         new OK({
             message: "Get get discount amount successful",
-            metadata: DiscountService.getDiscountAmount({
+            metadata: await DiscountService.getDiscountAmount({
                 ...req.body
             })
-        }).send()
+        }).send(res)
     }
     static delecteDiscount = async(req, res, next) => {
         new OK({
             message: "Delete discount successful",
-            metadata: DiscountService.delecteDiscount({
+            metadata: await DiscountService.delecteDiscount({
                 ...req.body
             })
-        }).send()
+        }).send(res)
     }
     static cancelDiscount = async(req, res, next) => {
         new OK({
             message: "Cancel discount successful",
-            metadata: DiscountService.cancelDiscount({
+            metadata: await DiscountService.cancelDiscount({
                 ...req.body
             })
-        }).send()
+        }).send(res)
     }
 }
 

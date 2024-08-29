@@ -7,7 +7,7 @@ const {
 } = require('../core/error.response')
 const deleted_discountModel = require('../models/deleted_discount.model')
 const discountModel = require('../models/discount.model')
-const { findOneDiscount, findAllDiscountUnselect, updateDiscountById } = require('../models/repositories/repo.discount')
+const { findOneDiscount, findAllDiscountUnselect, updateDiscountById, findOneDiscountSelect } = require('../models/repositories/repo.discount')
 const { findAllProduct } = require('../models/repositories/repo.product')
 const { convertObjectIdMongoDB, clearUpdateNestedValue } = require('../utils')
  
@@ -23,24 +23,23 @@ const { convertObjectIdMongoDB, clearUpdateNestedValue } = require('../utils')
 */
 
 class DiscountService {
-    static insertDiscount = async(payload) => {
-        const {
-            discount_name,
-            discount_description,
-            discount_type,
-            discount_value,
-            discount_code,
-            discount_start_date,
-            discount_end_date,
-            discount_max_uses,
-            discount_uses_count,
-            discount_max_uses_per_user,
-            discount_min_order_value,
-            discount_shopId,
-            discount_is_active,
-            discount_applies_to,
-            discount_products_id
-        } = payload
+    static insertDiscount = async({
+        discount_name,
+        discount_description,
+        discount_type,
+        discount_value,
+        discount_code,
+        discount_start_date,
+        discount_end_date,
+        discount_max_uses,
+        discount_uses_count,
+        discount_max_uses_per_user,
+        discount_min_order_value,
+        discount_shopId,
+        discount_is_active,
+        discount_applies_to,
+        discount_products_id
+    }) => {
         if(new Date(discount_start_date) > new Date() || new Date(discount_end_date) < new Date())
             throw new BadRequestError('Discount code has expired!')
 
@@ -51,7 +50,7 @@ class DiscountService {
             discount_code,
             discount_shopId: convertObjectIdMongoDB(discount_shopId)
         })
-        if(foundShop && foundShop.discount_is_active)  throw new BadRequestError('Discount was exist')
+        if(foundDiscount && foundDiscount.discount_is_active)  throw new BadRequestError('Discount was exist')
 
         const newDiscount = await discountModel.create({
             discount_name,
@@ -75,12 +74,19 @@ class DiscountService {
         return newDiscount
     }   
 
-    static updateDiscount = async({
-        code, 
-        shopId,
-        payload
-    }) => {
+    static updateDiscount = async(payload) => {
+        const {discount_code, discount_shopId} = payload
+        const {discount_type, discount_applies_to} = payload
+        if(discount_type) {
+            if(!['fixed_amount', 'percentage'].includes(discount_type)) throw new BadRequestError(`Discount_type:${discount_type} is invalid`)
+        }
+
+        if(discount_applies_to) {
+            if(!['all', 'specific'].includes(discount_applies_to)) throw new BadRequestError(`Discount_type:${discount_applies_to} is invalid`)
+        }
+
         const clearPayload = clearUpdateNestedValue(payload)
+
         const foundDiscount = await findOneDiscountSelect({
             discount_code,
             discount_shopId: convertObjectIdMongoDB(discount_shopId)
@@ -90,8 +96,8 @@ class DiscountService {
     }
 
     static findAllProductAvailable = async({
-        shopId,
-        code,
+        discount_shopId,
+        discount_code,
         userId,
         limit = 50, 
         page = 1, 
@@ -100,8 +106,8 @@ class DiscountService {
     }) => {
 
         const foundDiscount = await findOneDiscountSelect({
-            discount_shopId: shopId,
-            discount_code: code
+            discount_shopId,
+            discount_code
         })
         if(!foundDiscount || !foundDiscount.discount_is_active) throw new NotFoundError('Discount wasn\'t exist')
 
@@ -184,8 +190,8 @@ class DiscountService {
         shopId
     }) => {
         const foundDiscount = await findOneDiscountSelect({
-            discount_code: code,
-            discount_shopId: shopId
+            discount_code,
+            discount_shopId
         })        
         if(!foundDiscount) throw new BadRequestError('Not found discount')
         
@@ -198,13 +204,13 @@ class DiscountService {
     }
 
     static cancelDiscount = async({
-        code,
+        discount_code,
         userId,
-        shopId
+        discount_shopId
     }) => {
         const foundDiscount = await findOneDiscount({
             discount_code: code,
-            discount_shopId: shopId
+            discount_shopId
         })        
         if(!foundDiscount) throw new BadRequestError('Not found discount')
         const { discount_user_used} = foundDiscount
@@ -214,7 +220,7 @@ class DiscountService {
         //update
         foundDiscount.discount_max_uses += 1
         foundDiscount.discount_uses_count -= 1
-        foundDiscount.discount_user_used.pull(shopId)
+        foundDiscount.discount_user_used.pull(userId)
 
         return await foundDiscount.save()
     }

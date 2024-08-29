@@ -17,7 +17,7 @@ const discountSchema = new Schema({
 
     discount_user_used: {type: Array, default: []},
     discount_max_uses: {type: Number, required: true},
-    discount_uses_count: {type: Number, required: true}, // save user_id who used discount
+    discount_uses_count: {type: Number, required: true, default: 0}, // save user_id who used discount
     discount_max_uses_per_user: {type: Number, required: true}, //max uses each user,
     discount_min_order_value: {type: Number, required: true},
     discount_shopId: {type: Types.ObjectId, required: true, ref: 'Shop'},
