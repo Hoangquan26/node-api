@@ -23,10 +23,12 @@ class DiscountController {
         }).send(res)
     }
     static findAllProductAvailable = async(req, res, next) => {
+
         new OK({
             message: "Find all products avaliable successful",
             metadata: await DiscountService.findAllProductAvailable({
-                ...req.body
+                userId: req.user.userId,
+                ...req.query
             })
         }).send(res)
     }
@@ -34,7 +36,8 @@ class DiscountController {
         new OK({
             message: "Get all discount code successful",
             metadata: await DiscountService.getAllDiscountCodesByShop({
-                ...req.body
+                discount_shopId: req.params.discount_shopId,
+                ...req.query
             })
         }).send(res)
     }
@@ -42,7 +45,8 @@ class DiscountController {
         new OK({
             message: "Get get discount amount successful",
             metadata: await DiscountService.getDiscountAmount({
-                ...req.body
+                ...req.body,
+                userId: req.user.userId
             })
         }).send(res)
     }
@@ -50,7 +54,8 @@ class DiscountController {
         new OK({
             message: "Delete discount successful",
             metadata: await DiscountService.delecteDiscount({
-                ...req.body
+                ...req.body,
+                discount_shopId: req.user.userId
             })
         }).send(res)
     }
@@ -58,7 +63,8 @@ class DiscountController {
         new OK({
             message: "Cancel discount successful",
             metadata: await DiscountService.cancelDiscount({
-                ...req.body
+                ...req.body,
+                userId: req.user.userId
             })
         }).send(res)
     }

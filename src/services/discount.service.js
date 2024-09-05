@@ -98,7 +98,6 @@ class DiscountService {
     static findAllProductAvailable = async({
         discount_shopId,
         discount_code,
-        userId,
         limit = 50, 
         page = 1, 
         select = ['product_name', 'product_thumb', 'product_price'], 
@@ -109,35 +108,36 @@ class DiscountService {
             discount_shopId,
             discount_code
         })
+
         if(!foundDiscount || !foundDiscount.discount_is_active) throw new NotFoundError('Discount wasn\'t exist')
 
         const filter = {
-            product_shop: convertObjectIdMongoDB(shopId),
+            product_shop: convertObjectIdMongoDB(discount_shopId),
             isPublic: true
         }
         const {discount_applies_to, discount_products_id} = foundDiscount
         if(discount_applies_to === 'specific') 
-            filter['_id'] = {$in: {discount_products_id}}
-            
+            filter['_id'] = {$in: discount_products_id}
+        
+        console.log(filter)
         const products = await findAllProduct({
             filter, limit, page, select, sort
         })
-
+        console.log("....",products)
         return products
     }
 
     static getAllDiscountCodesByShop = async({
-        shopId,
+        discount_shopId,
         limit = 25,
         page = 1,
         sort = {create_at: 1},
         unSelectData = ['__v', 'discount_shopId']
     }) => {
         const filter = {
-            discount_shopId: shopId,
+            discount_shopId,
             discount_is_active: true
         }   
-
         const foundDiscounts = await findAllDiscountUnselect({
             filter, limit, page, sort, unSelectData
         })
@@ -146,37 +146,49 @@ class DiscountService {
     }
 
     static getDiscountAmount = async({
-        code,
-        shopId,
+        discount_code,
+        discount_shopId,
         products,
         userId
     }) => {
         const foundDiscount = await findOneDiscountSelect({
-            discount_code: code,
-            discount_shopId: shopId
+            discount_code,
+            discount_shopId
         })        
         if(!foundDiscount) throw new BadRequestError('Not found discount')
         // check if product availiable
-        const { discount_products_id, discount_start_date, discount_end_date, discount_min_order_value, discount_is_active, discount_max_uses, discount_user_used, discount_max_uses_per_user } = foundDiscount
+        const { 
+            discount_products_id, 
+            discount_start_date, 
+            discount_end_date, 
+            discount_min_order_value, 
+            discount_is_active, 
+            discount_max_uses, 
+            discount_user_used, 
+            discount_max_uses_per_user ,
+            discount_applies_to
+        } = foundDiscount
         if(!discount_is_active) throw new BadRequestError('Discount is expired')
         if(!discount_max_uses) throw new BadRequestError('Discount is expired')
         const validDiscountUseTime = new Date(discount_start_date) <= new Date() && new Date() <= new Date(discount_end_date)
         if(!validDiscountUseTime) throw new BadRequestError('Discount expired')
-        const validDiscountProduct = products.some(product => discount_products_id.includes(product))
-        if(!validDiscountProduct) throw new BadRequestError('Product isn\'t valiable in this discount')
-
+        if(discount_applies_to === 'specific') {
+            const validDiscountProduct = products.every(product => discount_products_id.includes(product._id))
+            console.log('validDiscountProduct:', validDiscountProduct)
+            if(!validDiscountProduct) throw new BadRequestError('Product isn\'t valiable in this discount')
+        }
         const userUsed = discount_user_used.find(user => user === userId)
-        const validUserUsedTime = userUsed.length < discount_max_uses_per_user
-        if(!validUserUsedTime) throw new BadRequestError('Out of time used')
-
+        if(userUsed) {
+            const validUserUsedTime = userUsed.length < discount_max_uses_per_user
+            if(!validUserUsedTime) throw new BadRequestError('Out of time used')
+        }
         const {discount_type, discount_value} = foundDiscount
         const totalProducts = products.reduce((acc, product) => {
-            return product.product_quantity * product.product_price
-        })
+            return acc + (product.product_quantity * product.product_price )
+        }, 0)
 
         if(totalProducts < discount_min_order_value) throw new BadRequestError(`Order value muse above ${discount_min_order_value}đ`)
-
-        const discountAmount = (discount_type === "fixed_amount") ? discount_value : discount_value * totalProducts
+        const discountAmount = (discount_type === "fixed_amount") ? discount_value : (discount_value * totalProducts) / 100
 
         return {
             totalProducts,
@@ -186,20 +198,23 @@ class DiscountService {
     }
 
     static delecteDiscount = async({
-        code,
-        shopId
+        discount_code,
+        discount_shopId
     }) => {
         const foundDiscount = await findOneDiscountSelect({
             discount_code,
             discount_shopId
-        })        
+        })
         if(!foundDiscount) throw new BadRequestError('Not found discount')
         
         //moved document to removed_discount
-        const deletedDiscount = deleted_discountModel.create(foundDiscount)
+        const deletedDiscount = deleted_discountModel.create({
+            ...foundDiscount,
+            discount_is_active: false
+        })
         if(!deletedDiscount) throw new BadRequestError('Moved discount error')
 
-        return await discountModel.deleteOne({_id: foundDiscount._id})
+        return await discountModel.findByIdAndDelete(foundDiscount._id)
 
     }
 
@@ -209,14 +224,14 @@ class DiscountService {
         discount_shopId
     }) => {
         const foundDiscount = await findOneDiscount({
-            discount_code: code,
+            discount_code,
             discount_shopId
         })        
         if(!foundDiscount) throw new BadRequestError('Not found discount')
-        const { discount_user_used} = foundDiscount
+        const { discount_user_used } = foundDiscount
+        console.log(discount_user_used, userId)
         const validUser = discount_user_used.includes(userId)
         if(!validUser) throw new BadRequestError("This discount wasn\'t used by you")
-
         //update
         foundDiscount.discount_max_uses += 1
         foundDiscount.discount_uses_count -= 1

@@ -26,7 +26,7 @@ const findOneDiscountSelect = async(filter, selectData = []) => {
     .lean()
 }
 
-const findAllDiscountSelect = async(filter, selectData, limit, page, sort) => {
+const findAllDiscountSelect = async({filter, selectData, limit, page, sort}) => {
     const skip = (page - 1) * limit
     return await discountModel
     .find(filter)
@@ -37,7 +37,8 @@ const findAllDiscountSelect = async(filter, selectData, limit, page, sort) => {
     .lean()
 }
 
-const findAllDiscountUnselect = async(filter, unSelectData, limit, page, sort) => {
+const findAllDiscountUnselect = async({filter, unSelectData, limit, page, sort}) => {
+    console.log({filter, unSelectData, limit, page, sort})
     const skip = (page - 1) * limit
     return await discountModel
     .find(filter)
