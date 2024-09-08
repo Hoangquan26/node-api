@@ -1,7 +1,7 @@
 'use strict'
 
 const { Types } = require("mongoose")
-const { readSelectArray, readUnselectArray } = require("../../utils")
+const { readSelectArray, readUnselectArray, convertObjectIdMongoDB } = require("../../utils")
 const { productModel } = require("../product.model")
 
 //UPDATE
@@ -72,6 +72,15 @@ const findOneProduct = async({unSelect, product_id}) => {
     .select(readUnselectArray(unSelect))
     .lean()
 }
+
+const findOneProductSelect = async({select, product_id}) => {
+    return await productModel.findOne({
+        _id: new Types.ObjectId(product_id)
+    })
+    .select(readSelectArray(select))
+    .lean()
+}
+
 const findAllProduct = async({limit, page, select, filter, sort}) => {
     const skip = (page - 1) * limit
     return await productModel.find(filter)
@@ -80,6 +89,13 @@ const findAllProduct = async({limit, page, select, filter, sort}) => {
     .limit(limit)
     .select(readSelectArray(select))
     .lean()
+}
+
+const getProductById = async(productId) => {
+    return await productModel.findOne({
+        _id: convertObjectIdMongoDB(productId),
+        isPublic: true
+    }).lean()
 }
 //END QUERY
 module.exports = {
@@ -90,5 +106,7 @@ module.exports = {
     findOneProduct,
     findAllProduct,
     searchProductByUser,
-    updateProductById
+    updateProductById,
+    getProductById,
+    findOneProductSelect
 }

@@ -13,7 +13,7 @@ const cartSchema = new Schema({
     },
     cart_product: { type: Array, default: [] },
     cart_product_count:  { type: Number, default: 0},
-    cart_userId: {type: Number, required: true}
+    cart_userId: {type: Types.ObjectId, required: true}
 }, {
     timestamps: true,
     collection: COLLECTION_NAME
