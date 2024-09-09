@@ -173,8 +173,7 @@ class DiscountService {
         const validDiscountUseTime = new Date(discount_start_date) <= new Date() && new Date() <= new Date(discount_end_date)
         if(!validDiscountUseTime) throw new BadRequestError('Discount expired')
         if(discount_applies_to === 'specific') {
-            const validDiscountProduct = products.every(product => discount_products_id.includes(product._id))
-            console.log('validDiscountProduct:', validDiscountProduct)
+            const validDiscountProduct = products.some(product => discount_products_id.includes(product._id))
             if(!validDiscountProduct) throw new BadRequestError('Product isn\'t valiable in this discount')
         }
         const userUsed = discount_user_used.find(user => user === userId)
@@ -184,16 +183,24 @@ class DiscountService {
         }
         const {discount_type, discount_value} = foundDiscount
         const totalProducts = products.reduce((acc, product) => {
-            return acc + (product.product_quantity * product.product_price )
-        }, 0)
+            return {
+                totalUnDiscount: !discount_products_id.includes(product._id) && discount_applies_to === 'specific' ? acc.totalUnDiscount + (product.product_quantity * product.product_price) : acc.totalUnDiscount,
+                totalInDiscount: discount_products_id.includes(product._id) || discount_applies_to === 'all' ? acc.totalInDiscount + (product.product_quantity * product.product_price) : acc.totalInDiscount,
+                total: acc.total + (product.product_quantity * product.product_price)
+            }
+        }, {
+            totalInDiscount: 0,
+            totalUnDiscount: 0,
+            total: 0
+        })
 
-        if(totalProducts < discount_min_order_value) throw new BadRequestError(`Order value muse above ${discount_min_order_value}đ`)
-        const discountAmount = (discount_type === "fixed_amount") ? discount_value : (discount_value * totalProducts) / 100
+        if(totalProducts.total < discount_min_order_value) throw new BadRequestError(`Order value muse above ${discount_min_order_value}đ`)
+        const discountAmount = (discount_type === "fixed_amount") ? discount_value : (discount_value * totalProducts.totalInDiscount) / 100
 
         return {
             totalProducts,
             discountAmount,
-            beforeDiscount: totalProducts - discountAmount
+            beforeDiscount: totalProducts.total - discountAmount
         }
     }
 

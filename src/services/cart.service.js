@@ -1,6 +1,7 @@
 'use strict'
 
 const cartModel = require("../models/cart.model")
+const { createUserCart, findUserCart } = require("../models/repositories/repo.cart")
 const { getProductById, findOneProductSelect } = require("../models/repositories/repo.product")
 const { convertObjectIdMongoDB } = require("../utils")
 
@@ -17,36 +18,8 @@ const { convertObjectIdMongoDB } = require("../utils")
 
 class CartService {
 
-    ///REPO
-    static createUserCart = async({ userId, product = {} }) => {
-        const query = {
-            cart_userId: convertObjectIdMongoDB(userId),
-            cart_status: 'active'
-        }
-        const updateOrInsert = {
-            $addToSet: {
-                cart_product: product
-            },
-            $inc: {
-                cart_product_count: product.length
-            }
-        }
-        const options = { upsert: true, new: true }
-        return await cartModel.findOneAndUpdate(query, updateOrInsert, options)
-
-    }
-
-    static findUserCart = async({ userId})  => {
-        const query = {
-            cart_userId: convertObjectIdMongoDB(userId),
-            cart_status: 'active',
-        }
-        return await cartModel.findOne(query)
-    }
-
-    ///END REPO
     static addToCart = async({ userId, product = {} }) => {
-        const foundCart = await CartService.findUserCart({ userId })
+        const foundCart = await findUserCart({ userId })
         const {productId, product_quantity} = product
         const foundProduct = {
             ...await findOneProductSelect({
@@ -57,7 +30,7 @@ class CartService {
         }
 
         if(!foundCart) {
-            return await CartService.createUserCart({userId, product: foundProduct})
+            return await createUserCart({userId, product: foundProduct})
         } 
         if(foundCart.cart_product.length == 0) {
             foundCart.cart_product = [foundProduct]

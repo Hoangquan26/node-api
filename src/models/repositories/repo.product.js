@@ -97,6 +97,19 @@ const getProductById = async(productId) => {
         isPublic: true
     }).lean()
 }
+
+const checkServerProducts = async({products, shopId, select = ['product_price']}) => {
+    return Promise.all(products.map(async product => {
+        return {
+            ...await productModel.find({
+                _id: convertObjectIdMongoDB(product.productId),
+                product_shopId: convertObjectIdMongoDB(shopId)
+            }).select(readSelectArray(select)),
+            ...product
+        }
+    }))
+}
+
 //END QUERY
 module.exports = {
     getDraftProductForShop,
@@ -108,5 +121,6 @@ module.exports = {
     searchProductByUser,
     updateProductById,
     getProductById,
-    findOneProductSelect
+    findOneProductSelect,
+    checkServerProducts
 }
