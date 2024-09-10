@@ -5,6 +5,7 @@ const {
     readUnselectArray,
     readSelectArray
 } = require('../../utils')
+const DiscountService = require('../../services/discount.service')
 
 //query
 const findOneDiscount = async(filter) => {
@@ -50,6 +51,8 @@ const findAllDiscountUnselect = async({filter, unSelectData, limit, page, sort})
 }
 
 
+
+
 //update
 
 const updateDiscountById = async({
@@ -62,11 +65,12 @@ const updateDiscountById = async({
     })
 }
 
+
 module.exports = {
     findOneDiscountSelect,
     findOneDiscountUnselect,
     findOneDiscount,
     findAllDiscountSelect,
     findAllDiscountUnselect,
-    updateDiscountById
+    updateDiscountById,
 }

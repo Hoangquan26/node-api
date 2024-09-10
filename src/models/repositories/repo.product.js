@@ -101,10 +101,10 @@ const getProductById = async(productId) => {
 const checkServerProducts = async({products, shopId, select = ['product_price']}) => {
     return Promise.all(products.map(async product => {
         return {
-            ...await productModel.find({
+            ...await productModel.findOne({
                 _id: convertObjectIdMongoDB(product.productId),
-                product_shopId: convertObjectIdMongoDB(shopId)
-            }).select(readSelectArray(select)),
+                product_shop: convertObjectIdMongoDB(shopId)
+            }).select(readSelectArray(select)).lean(),
             ...product
         }
     }))

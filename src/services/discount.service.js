@@ -173,7 +173,7 @@ class DiscountService {
         const validDiscountUseTime = new Date(discount_start_date) <= new Date() && new Date() <= new Date(discount_end_date)
         if(!validDiscountUseTime) throw new BadRequestError('Discount expired')
         if(discount_applies_to === 'specific') {
-            const validDiscountProduct = products.some(product => discount_products_id.includes(product._id))
+            const validDiscountProduct = products.some(product => discount_products_id.includes(product._id.toString()))
             if(!validDiscountProduct) throw new BadRequestError('Product isn\'t valiable in this discount')
         }
         const userUsed = discount_user_used.find(user => user === userId)
