@@ -5,6 +5,7 @@ const { PRODUCT_DOCUMENT_NAME } = require("../helpers/product.document.name")
 const { clothingModel, electronicModel, productModel, furnitureModel } = require("../models/product.model")
 const { clearUpdateNestedValue } = require('../utils')
 const { createInventory } = require('../models/repositories/repo.inventory')
+const { pushNotifiToSystem } = require('./notification.service')
 
 
 class ProductFactory {
@@ -18,8 +19,8 @@ class ProductFactory {
         const {product_type} = payload 
         const productClass = ProductFactory.productRegistry[product_type]
         if(!productClass) throw new BadRequestError(`Invalid product type: ${product_type}`)
+        
 
-        console.log(`[P]::payload::`, payload)
         return await new productClass(payload).createProduct()
     }
    //UPDATE
@@ -107,7 +108,18 @@ class Product {
                 inven_shopId: this.product_shop,
                 inven_stock: this.product_quantity
             })
-        } 
+        }
+
+        pushNotifiToSystem({
+            receivedId: this.product_shop,
+            senderId: this.product_shop,
+            noti_options: {
+                product_name: this.product_name,
+                shop_name: this.product_shop
+            }
+        }).then(rs => console.log(rs))
+        .catch(err => console.error(err))
+
         return newProduct
     }
     async updateProduct({product_id, payload}) {

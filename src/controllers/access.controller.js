@@ -20,7 +20,9 @@ class AccessController {
         new OK({
             message: 'Logout OK',
             metadata: await AccessService.logout(req.keyStore)
-        }).send(res)
+        }).send(res, {
+            
+        })
     }
 
     login = async( req, res, next ) => {

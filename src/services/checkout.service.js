@@ -4,6 +4,7 @@ const { BadRequestError } = require("../core/error.response")
 const { findUserCart } = require("../models/repositories/repo.cart")
 const { checkServerProducts } = require("../models/repositories/repo.product")
 const DiscountService = require("./discount.service")
+const { releaseLock, aquireLock } = require("./redis.service")
 
 class CheckoutService {
     /*
@@ -101,6 +102,25 @@ class CheckoutService {
             shop_order_ids,
             shop_order_ids_new
         }
+    }
+
+    static orderByUser = async({ 
+        shop_order_ids, 
+        userId, 
+        cartId 
+    }) => {
+        const { shop_order_ids_new, totalCheckout } = CheckoutService.checkoutReview({ userId, cartId, shop_order_ids })
+        const products = shop_order_ids_new.flatMap(item => item.products)
+        const aquireLockRes = []
+        for(let i = 0; i < products.length; i++) {
+            const {productId, product_quantity} = products[i]
+            const key = await aquireLock({productId, product_quantity, cartId})
+            aquireLockRes.push(key ? true : false)
+            if(key) await releaseLock(key)
+        }
+
+        if(aquireLockRes.includes(false)) throw new BadRequestError('Some products has been changed')
+        //add to order collection
     }
 }
 
